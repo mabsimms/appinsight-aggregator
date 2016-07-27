@@ -1,4 +1,4 @@
-namespace QueueProcessing
+namespace AzureCAT.Samples.AppInsight
 {
     using System;
     using System.Collections.Generic;
@@ -7,7 +7,6 @@ namespace QueueProcessing
     using System.Threading.Tasks.Dataflow;
     using System.Threading;
     using Microsoft.Extensions.Configuration;
-    using Serilog;
 
     public class SlidingWindowBase<TInput, TOutput> : IDisposable
     {

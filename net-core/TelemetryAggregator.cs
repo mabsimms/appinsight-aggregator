@@ -7,16 +7,21 @@ namespace AzureCAT.Samples.AppInsight
         SlidingWindowBase<ITelemetry, ITelemetry>, 
         ITelemetryProcessor
     {
-        public TelemetryAggregator(IPipelineFunctions funcs)
+        private readonly ITelemetryProcessor _next;
+
+        public TelemetryAggregator(ITelemetryProcessor next, 
+            IPipelineFunctions funcs)
             : base(null, null, 
                 funcs.Filter, 
                 funcs.GetName, 
                 funcs.Transform, 
-                funcs.Publish)
+                (evts) => { 
+                    foreach (var e in evts) next.Process(e);
+                    return Task.FromResult(0); 
+                })
         {
 
         } 
-
     }
 
     public interface IPipelineFunctions
@@ -32,5 +37,8 @@ namespace AzureCAT.Samples.AppInsight
     }
 
     public interface ITelemetry {}
-    public interface ITelemetryProcessor {}
+    public interface ITelemetryProcessor {
+        void Process(ITelemetry evt);
+
+    }
 }

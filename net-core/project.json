@@ -4,7 +4,12 @@
     "debugType": "portable",
     "emitEntryPoint": true
   },
-  "dependencies": {},
+  "dependencies": {
+    "Microsoft.Extensions.Configuration" : "",
+    "Microsoft.Extensions.Logging" : "",
+    
+
+  },
   "frameworks": {
     "netcoreapp1.0": {
       "dependencies": {
