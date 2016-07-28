@@ -57,6 +57,7 @@ artifacts/
 *.pgd
 *.rsp
 *.sbr
+*.swp
 *.tlb
 *.tli
 *.tlh

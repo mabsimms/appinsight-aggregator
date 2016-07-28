@@ -1,6 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.ApplicationInsights.Channel;
+using Microsoft.ApplicationInsights.DataContracts;
+using MathNet.Numerics.Statistics;
 
 namespace AzureCAT.Samples.AppInsight
 {
@@ -8,22 +12,14 @@ namespace AzureCAT.Samples.AppInsight
     {
         public bool Filter(ITelemetry evt)
         {
-            return !(evt is MetricEvent);
+            return !(evt is MetricTelemetry);
         }
 
         public string GetName(ITelemetry evt)
         {
-            return evt.Name;
-        }
-
-        public string GetUnit(ITelemetry evt)
-        {
-            throw new NotImplementedException();
-        }
-
-        public double GetValue(ITelemetry evt)
-        {
-            throw new NotImplementedException();
+            if (evt is MetricTelemetry)
+                return (evt as MetricTelemetry).Name;
+            return "";
         }
 
         public IEnumerable<ITelemetry> Transform(IEnumerable<ITelemetry> evts)
@@ -31,20 +27,41 @@ namespace AzureCAT.Samples.AppInsight
               return evts
                     .OfType<MetricTelemetry>()
                     .GroupBy(e => new { e.Name })
-                    .Select(e => new MetricTelemetry()
+                    .Select(e => new MetricTelemetryCollection() 
                     {
-                        Name = e.Key.Name,
-                        Value = e.Average(t => t.Value),
-                        Timestamp = e.First().Timestamp,
-                        Min = e.Min(t => t.Value),
-                        Max = e.Max(t => t.Value),
-                        Count = e.Count(),
-                        StandardDeviation = Statistics.StandardDeviation(e.Select(t => t.Value)),
+                        Event = new MetricTelemetry () {
+                            Name = e.Key.Name,
+                            Value = e.Average(t => t.Value),
+                            Timestamp = e.First().Timestamp,
+                            Min = e.Min(t => t.Value),
+                            Max = e.Max(t => t.Value),
+                            Count = e.Count(),
+                            StandardDeviation = e.StdDev(t => t.Value),
 
-                        // TODO - how to add to a dictionary declaratively
-                        //Statistics.Percentile(t => t.Value, 90)
-                        //Statistics.Percentile(t => t.Value, 99)
-                    });
+                        // Use the merge method to pull the percentiles into the
+                        // proprties dictionary                     
+                        },
+                        Properties = new Dictionary<string, string>() { 
+                            { "P50", Statistics.Percentile(e.Select(t=> t.Value), 50).ToString() },
+                            { "P90", Statistics.Percentile(e.Select(t=> t.Value), 90).ToString() },
+                            { "P99", Statistics.Percentile(e.Select(t=> t.Value), 99).ToString() } 
+                        }
+                    })
+                    .Select(e => e.Merge())
+                ;
+        }
+    }
+
+    public class MetricTelemetryCollection 
+    {
+        public MetricTelemetry Event { get; set; }
+        public IDictionary<string, string> Properties { get; set; }
+
+        public MetricTelemetry Merge()
+        {
+            foreach (var nr in Properties)
+                Event.Properties.Add(nr.Key, nr.Value);
+            return Event;
         }
     }
 }

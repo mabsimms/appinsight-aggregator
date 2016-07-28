@@ -10,8 +10,6 @@ namespace AzureCAT.Samples.AppInsight
 
     public class SlidingWindowBase<TInput, TOutput> : IDisposable
     {
-        private readonly ILogger _logger;
-
         private BufferBlock<TInput> _buffer;
         private BatchBlock<TInput> _batcher;
 
@@ -29,14 +27,13 @@ namespace AzureCAT.Samples.AppInsight
 
         private long _droppedEvents;
 
-        public SlidingWindowBase(IConfiguration config, ILogger log,
+        public SlidingWindowBase(SlidingWindowConfiguration config, 
             Func<TInput, bool> filterFunc,
             Func<TInput, string> nameFunc,
             Func<IEnumerable<TInput>, IEnumerable<TOutput>> transformFunc,
             Func<IEnumerable<TOutput>, Task> publishFunc)
         {
             _tokenSource = new CancellationTokenSource();
-            _logger = log;
 
             // Set up the message transforms
             this._filterFunc = filterFunc;
@@ -48,24 +45,20 @@ namespace AzureCAT.Samples.AppInsight
             InitializeFlow(config);
         }
 
-        protected void InitializeFlow(IConfiguration config)
+        protected void InitializeFlow(SlidingWindowConfiguration config)
         {
             // TODO - use the extension method
-            int maxBacklog = Int16.Parse(config["maxBacklog"]);
-            int maxWindowEventCount = Int32.Parse(config["maxWindowCount"]);
-            TimeSpan windowSize = TimeSpan.Parse(config["windowSize"]);
-
             var bufferOptions = new ExecutionDataflowBlockOptions()
             {
-                BoundedCapacity = maxBacklog,
+                BoundedCapacity = config.MaxBacklogSize,
                 CancellationToken = _tokenSource.Token
             };
             _buffer = new BufferBlock<TInput>(bufferOptions);
 
-            _batcher = new BatchBlock<TInput>(maxWindowEventCount,
+            _batcher = new BatchBlock<TInput>(config.MaxWindowEventCount,
                 new GroupingDataflowBlockOptions()
                 {
-                    BoundedCapacity = maxWindowEventCount,
+                    BoundedCapacity = config.MaxWindowEventCount,
                     Greedy = true,
                     CancellationToken = _tokenSource.Token
                 });
@@ -92,7 +85,9 @@ namespace AzureCAT.Samples.AppInsight
             disp.Add(_aggregator.LinkTo(_publisher));
             _disposables = disp.ToArray();
 
-            this._windowTimer = new Timer(FlushBuffer, null, windowSize, windowSize);
+            this._windowTimer = new Timer(FlushBuffer, null, 
+                config.SlidingWindowSize, config.SlidingWindowSize);
+                
         }
 
         private void FlushBuffer(object state)
@@ -103,7 +98,7 @@ namespace AzureCAT.Samples.AppInsight
             }
         }
 
-        public void Process(TInput item)
+        public void Enqueue(TInput item)
         {
             // Do we process this record for local aggregation?                
             if (!_filterFunc(item))
@@ -127,7 +122,7 @@ namespace AzureCAT.Samples.AppInsight
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "Error in publishing {count} messages", events.Count());
+                // TODO - log this out    
             }
         }
 
@@ -144,5 +139,11 @@ namespace AzureCAT.Samples.AppInsight
             foreach (var d in _disposables)
                 d.Dispose();
         }
+    }
+
+    public class SlidingWindowConfiguration {
+        public int MaxBacklogSize { get; set; } 
+        public int MaxWindowEventCount { get; set; }
+        public TimeSpan SlidingWindowSize { get; set; }
     }
 }
