@@ -7,6 +7,7 @@ namespace AzureCAT.Samples.AppInsight
     using System.Threading.Tasks.Dataflow;
     using System.Threading;
     using Microsoft.Extensions.Configuration;
+    using Microsoft.Extensions.Logging;
 
     public class SlidingWindowBase<TInput, TOutput> : IDisposable
     {
@@ -27,13 +28,17 @@ namespace AzureCAT.Samples.AppInsight
 
         private long _droppedEvents;
 
+        private readonly ILogger _logger;
+
         public SlidingWindowBase(SlidingWindowConfiguration config, 
             Func<TInput, bool> filterFunc,
             Func<TInput, string> nameFunc,
             Func<IEnumerable<TInput>, IEnumerable<TOutput>> transformFunc,
-            Func<IEnumerable<TOutput>, Task> publishFunc)
+            Func<IEnumerable<TOutput>, Task> publishFunc,
+            ILogger logger)
         {
-            _tokenSource = new CancellationTokenSource();
+            this._logger = logger;
+            this._tokenSource = new CancellationTokenSource();
 
             // Set up the message transforms
             this._filterFunc = filterFunc;
@@ -87,7 +92,6 @@ namespace AzureCAT.Samples.AppInsight
 
             this._windowTimer = new Timer(FlushBuffer, null, 
                 config.SlidingWindowSize, config.SlidingWindowSize);
-                
         }
 
         private void FlushBuffer(object state)

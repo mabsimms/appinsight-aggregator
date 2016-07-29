@@ -5,6 +5,7 @@ namespace AzureCAT.Samples.AppInsight
     using Microsoft.ApplicationInsights.Channel;
     using Microsoft.ApplicationInsights.Extensibility;
     using System;
+    using Microsoft.Extensions.Logging;
 
     public class TelemetryAggregator :
         SlidingWindowBase<ITelemetry, ITelemetry>, 
@@ -14,6 +15,7 @@ namespace AzureCAT.Samples.AppInsight
         private readonly bool _publishRawEvents;
 
         public TelemetryAggregator(ITelemetryProcessor next, 
+            ILogger logger,
             IPipelineFunctions funcs,
             TimeSpan windowSpan,
             bool publishRawEvents,
@@ -28,10 +30,19 @@ namespace AzureCAT.Samples.AppInsight
                 funcs.GetName, 
                 funcs.Transform, 
                 (evts) => { 
-                    // TODO - catch any errors here
-                    foreach (var e in evts) next.Process(e);
+                    if (evts == null)
+                        return Task.FromResult(0);
+                    foreach (var e in evts) 
+                    {
+                        // TODO - do something better than on error goto next
+                        try 
+                        {
+                            next.Process(e);
+                        } 
+                        catch (Exception ex) {}
+                    }
                     return Task.FromResult(0); 
-                })
+                }, logger)
         {
             this._next = next;
             this._publishRawEvents = publishRawEvents;

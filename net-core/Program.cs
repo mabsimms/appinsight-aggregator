@@ -14,6 +14,7 @@ namespace AzureCAT.Samples.AppInsight
             var loggerFactory = new LoggerFactory()
                 .AddConsole()
             ;
+            var logger = loggerFactory.CreateLogger("Default");
 
             var cfgBuilder = new ConfigurationBuilder()
                 .AddEnvironmentVariables()
@@ -38,7 +39,8 @@ namespace AzureCAT.Samples.AppInsight
                 next : next, 
                 funcs: new DefaultAppInsightPipeline(),
                 windowSpan: windowSpan,
-                publishRawEvents: publishRawEvents));
+                publishRawEvents: publishRawEvents,
+                logger: logger));
             builder.Use((next) => new DebugProcessor(next));
             builder.Build();
 
