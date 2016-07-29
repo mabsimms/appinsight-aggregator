@@ -39,7 +39,9 @@ namespace AzureCAT.Samples.AppInsight
                         {
                             next.Process(e);
                         } 
-                        catch (Exception ex) {}
+                        catch (Exception ex) {
+							logger.LogError(0, ex, "Error in telemetry pipeline");
+                        }
                     }
                     return Task.FromResult(0); 
                 }, logger)

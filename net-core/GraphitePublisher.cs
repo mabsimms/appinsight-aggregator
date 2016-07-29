@@ -24,6 +24,13 @@ namespace AzureCAT.Samples.AppInsight
         private System.Threading.Timer _windowTimer;
         private System.IDisposable[] _disposables;
 
+	// TODO - how to enrich the metric name with the source identifier
+        public GraphitePublisher(ITelemetryProcessor next,
+			ILogger logger,
+			string hostName		        	
+			) : this(next, logger, hostName, 2003, System.TimeSpan.FromSeconds(1), 100)
+		 {}
+
         public GraphitePublisher(ITelemetryProcessor next,
             ILogger logger,
             string hostName,
@@ -104,9 +111,13 @@ namespace AzureCAT.Samples.AppInsight
                 using (var sw = new StreamWriter(stream))
                 {
                     foreach (var e in events)
+		    {
                         await sw.WriteLineAsync(e);
+                        _logger.LogDebug($"Sending |{e}| to graphite");
+                    }
                 }                  
             }
+            _logger.LogInformation("Published {0} events to graphite", events.Count());
         }
 
         public IList<string> GetGraphiteContent(IEnumerable<ITelemetry> eventsList)
@@ -117,18 +128,27 @@ namespace AzureCAT.Samples.AppInsight
                 if (e is MetricTelemetry)
                 {
                     var me = e as MetricTelemetry;
-                    contentList.Add($"{me.Name}.avg {me.Value} {me.Timestamp.ToUnixTimeSeconds()}");
-                    contentList.Add($"{me.Name}.min {me.Min} {me.Timestamp.ToUnixTimeSeconds()}");
-                    contentList.Add($"{me.Name}.max {me.Max} {me.Timestamp.ToUnixTimeSeconds()}");
-                    contentList.Add($"{me.Name}.count {me.Count} {me.Timestamp.ToUnixTimeSeconds()}");
-                    contentList.Add($"{me.Name}.stddev {me.StandardDeviation} {me.Timestamp.ToUnixTimeSeconds()}");
+                    var metricName = me.Name
+            		.ToLower()
+                        .Replace(' ', '_')
+                        .Replace(':', '.')
+                        .Replace('/', '.')
+                        .Replace("\"", "")
+                        .TrimEnd('.')
+                        .TrimEnd('\n')
+                    ;
+                    contentList.Add($"{metricName}.avg {me.Value} {me.Timestamp.ToUnixTimeSeconds()}");
+                    contentList.Add($"{metricName}.min {me.Min} {me.Timestamp.ToUnixTimeSeconds()}");
+                    contentList.Add($"{metricName}.max {me.Max} {me.Timestamp.ToUnixTimeSeconds()}");
+                    contentList.Add($"{metricName}.count {me.Count} {me.Timestamp.ToUnixTimeSeconds()}");
+                    contentList.Add($"{metricName}.stddev {me.StandardDeviation} {me.Timestamp.ToUnixTimeSeconds()}");
 
                     if (me.Properties.ContainsKey("P50"))
-                        contentList.Add($"{me.Name}.p50 {me.Properties["P50"]} {me.Timestamp.ToUnixTimeSeconds()}\n");
+                        contentList.Add($"{metricName}.p50 {me.Properties["P50"]} {me.Timestamp.ToUnixTimeSeconds()}");
                     if (me.Properties.ContainsKey("P90"))
-                        contentList.Add($"{me.Name}.p90 {me.Properties["P90"]} {me.Timestamp.ToUnixTimeSeconds()}\n");
+                        contentList.Add($"{metricName}.p90 {me.Properties["P90"]} {me.Timestamp.ToUnixTimeSeconds()}");
                    if (me.Properties.ContainsKey("P99"))
-                        contentList.Add($"{me.Name}.p99 {me.Properties["P99"]} {me.Timestamp.ToUnixTimeSeconds()}\n");
+                        contentList.Add($"{metricName}.p99 {me.Properties["P99"]} {me.Timestamp.ToUnixTimeSeconds()}");
                 }
             }
             return contentList;

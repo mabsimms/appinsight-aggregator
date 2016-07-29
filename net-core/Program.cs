@@ -12,7 +12,7 @@ namespace AzureCAT.Samples.AppInsight
         {
             Console.WriteLine("Starting this up!");
             var loggerFactory = new LoggerFactory()
-                .AddConsole()
+                .AddConsole(LogLevel.Debug)
             ;
             var logger = loggerFactory.CreateLogger("Default");
 
@@ -41,6 +41,7 @@ namespace AzureCAT.Samples.AppInsight
                 windowSpan: windowSpan,
                 publishRawEvents: publishRawEvents,
                 logger: logger));
+	    builder.Use((next) => new GraphitePublisher(next, logger, "localhost"));
             builder.Use((next) => new DebugProcessor(next));
             builder.Build();
 

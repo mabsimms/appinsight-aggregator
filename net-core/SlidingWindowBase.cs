@@ -126,7 +126,7 @@ namespace AzureCAT.Samples.AppInsight
             }
             catch (Exception ex)
             {
-                // TODO - log this out    
+		_logger.LogError(0, ex, "Error in publishing");
             }
         }
 
