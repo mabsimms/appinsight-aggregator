@@ -3,9 +3,15 @@
 Example of using TPL data flow to perform in-memory aggregation for observed telemetry events (currently only 
 supports MetricEvent type) with some ability to plug-in filtering logic.
 
-TODOs:
-- Support all ITelemetry event types (e.g. track events)
-- Add the concurrency guard to prevent name type explosion
-- Add a name consolidator function/transform (to prevent thigns like /a/b/c/guid,guid,guid from filling up the downstream pipe)
-- Add a servertelemetry telemetry publisher using the same producer/consumer queue based on TPL data flow
+## AzureCAT.Samples.AppInsight
 
+First cut sample using .NET Framework 4.5.  Deprecated.
+
+## net-core
+
+More robust implementation built on top of .NET Core 1.0, and compatible with Linux/MacOS execution.  Open items and
+TODOs:
+
+- [ ] Support non-MetricTelemetry events
+- [ ] Add internal error logging
+- [ ] Add internal MetricEvents for tracking dropped/throttled events, etc
