@@ -8,8 +8,15 @@ using Microsoft.AspNetCore.Builder;
 
 namespace TestWebApp
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public class Program
     {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="args"></param>
         public static void Main(string[] args)
         {
             var host = new WebHostBuilder()

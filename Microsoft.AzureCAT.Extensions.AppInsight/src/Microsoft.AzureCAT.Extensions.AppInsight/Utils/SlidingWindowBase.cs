@@ -19,7 +19,7 @@ namespace Microsoft.AzureCAT.Extensions.AppInsight
         private TransformBlock<IEnumerable<TInput>, IEnumerable<TOutput>> _aggregator;
         private ActionBlock<IEnumerable<TOutput>> _publisher;
 
-        private CancellationTokenSource _tokenSource;
+        private readonly CancellationTokenSource _tokenSource;
         private System.Threading.Timer _windowTimer;
         private IDisposable[] _disposables;
 

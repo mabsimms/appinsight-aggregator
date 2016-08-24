@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+using Microsoft.AzureCAT.Extensions.AppInsight.Utils.Microsoft.ApplicationInsights.Extensibility.Implementation.Tracing;
 
 namespace Microsoft.AzureCAT.Extensions.AppInsight
 {
@@ -15,13 +16,13 @@ namespace Microsoft.AzureCAT.Extensions.AppInsight
         private BatchBlock<T> _batcher;
         private ActionBlock<IEnumerable<T>> _publish;
 
-        private CancellationTokenSource _tokenSource;
+        private readonly CancellationTokenSource _tokenSource;
         private IDisposable[] _disposables;
         private int _disposeCount = 0;
 
         // Background timer to periodically flush the batch block
         private System.Threading.Timer _windowTimer;
-        private Func<IEnumerable<T>, Task> _publishFunc;
+        private readonly Func<IEnumerable<T>, Task> _publishFunc;
 
         public BatchingPublisher(int capacity, TimeSpan windowSize,
             Func<IEnumerable<T>, Task> publishFunc)
@@ -112,9 +113,8 @@ namespace Microsoft.AzureCAT.Extensions.AppInsight
                 }
             }
             catch (Exception e)
-            {
-                // TODO
-                // CoreEventSource.Log.LogVerbose("PipelinedInMemoryTransmitter.Enqueue failed: ", e.ToString());
+            {                
+                CoreEventSource.Log.LogVerbose("PipelinedInMemoryTransmitter.Enqueue failed: ", e.ToString());
             }
         }
     }

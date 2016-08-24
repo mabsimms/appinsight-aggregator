@@ -10,11 +10,12 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+using Microsoft.AzureCAT.Extensions.AppInsight.Utils.Microsoft.ApplicationInsights.Extensibility.Implementation.Tracing;
 
 namespace Microsoft.AzureCAT.Extensions.AppInsight.Sinks
 {
     // TODO - subclass or encapsulate the buffering publisher
-    // TODO - optimize hte tcp socket management to maintain sockets
+    // TODO - optimize the tcp socket management to maintain sockets
     public class GraphitePublisher : ITelemetryProcessor, System.IDisposable
     {
         protected readonly ITelemetryProcessor _next;
@@ -74,10 +75,7 @@ namespace Microsoft.AzureCAT.Extensions.AppInsight.Sinks
 
         protected void FlushBuffer(object state)
         {
-            if (_batchBlock != null)
-            {
-                _batchBlock.TriggerBatch();
-            }
+            _batchBlock?.TriggerBatch();
         }
 
         public void Process(ITelemetry item)
@@ -101,7 +99,7 @@ namespace Microsoft.AzureCAT.Extensions.AppInsight.Sinks
             }
             catch (System.Exception ex)
             {
-                _logger.LogError(0, ex, "error in processing {count} events", events?.Count());
+                CoreEventSource.Log.LogVerbose("GraphitePublisher publish failed: ", ex.ToString());
             }
         }
 
@@ -116,10 +114,14 @@ namespace Microsoft.AzureCAT.Extensions.AppInsight.Sinks
                     foreach (var e in events)
                     {
                         await sw.WriteLineAsync(e);
-                        _logger.LogDebug($"Sending |{e}| to graphite");
+
+                        // TODO - replace the logging consistently with an event source
+                        //_logger.LogDebug($"Sending |{e}| to graphite");
                     }
                 }
             }
+
+            // TODO - replace the logging consistently with an event source
             _logger.LogInformation("Published {0} events to graphite", events.Count());
         }
 

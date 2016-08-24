@@ -14,7 +14,10 @@ namespace TestWebApp.Controllers
     [Produces("application/json")]
     public class ValuesController : Controller
     {
-        // GET api/values
+        /// <summary>
+        /// Get some values
+        /// </summary>
+        /// <returns>A constant string</returns>
         [HttpGet]
         [Produces(typeof(string))]
         [SwaggerResponse(System.Net.HttpStatusCode.OK, Type = typeof(string))]
@@ -23,7 +26,11 @@ namespace TestWebApp.Controllers
             return new string[] { "value1", "value2" };
         }
 
-        // GET api/values/5
+        /// <summary>
+        /// Return a single value
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns>A static value</returns>
         [HttpGet("{id}")]
         [Produces(typeof(string))]
         [SwaggerResponse(System.Net.HttpStatusCode.OK, Type = typeof(string))]        
