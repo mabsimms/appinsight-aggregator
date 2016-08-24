@@ -16,6 +16,8 @@ namespace Microsoft.AzureCAT.Extensions.AppInsight.Sinks
 {
     /// <summary>
     /// TODO - implement gzip compression for a blob chunk
+    /// TODO - implement type demultiplexing (one type per blob) support 
+    /// with broadcastblock and linkto with options
     /// </summary>
     public class BlobContainerSink : ITelemetryProcessor, IDisposable
     {
